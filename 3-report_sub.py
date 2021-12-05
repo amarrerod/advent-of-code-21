@@ -36,48 +36,44 @@ def process_report(input_filename=filename):
         return gamma * epsilon
 
 
-def oxygen_c02_report(data):
-    cols = 12
-    zeros = 0
+def filter_data(data, i, oxygen=True):
     ones = 0
+    zeros = 0
+    def filter_zeros(data): return filter(lambda x: x[i] == '0', data)
+    def filter_ones(data): return filter(lambda x: x[i] == '1', data)
+    for line in data:
+        if line[i] == '1':
+            ones += 1
+        else:
+            zeros += 1
+    if oxygen:
+        if ones >= zeros:
+            return list(filter_ones(data))
+        else:
+            return list(filter_zeros(data))
+    else:
+        if ones >= zeros:
+            return list(filter_zeros(data))
+        else:
+            return list(filter_ones(data))
+
+
+def oxygen_c02_report(data):
     remaining_oxygen = data.copy()
     remaining_co2 = data.copy()
-    keep_searching = True
     i = 0
-    while len(remaining_oxygen) != 1:
-        zeros = 0
-        ones = 0
+    done_yet = False
+    while not done_yet:
         # First the oxygen
         if len(remaining_oxygen) != 1:
-            for line in remaining_oxygen:
-                if line[i] == '1':
-                    ones += 1
-                else:
-                    zeros += 1
-            if ones >= zeros:
-                remaining_oxygen = list(
-                    filter(lambda x: x[i] == '1', remaining_oxygen))
-            else:
-                remaining_oxygen = list(
-                    filter(lambda x: x[i] == '0', remaining_oxygen))
-
-        zeros = 0
-        ones = 0
+            remaining_oxygen = filter_data(remaining_oxygen, i)
         # Second the Co2
         if len(remaining_co2) != 1:
-            for line in remaining_co2:
-                if line[i] == '1':
-                    ones += 1
-                else:
-                    zeros += 1
-            if ones >= zeros:
-                remaining_co2 = list(
-                    filter(lambda x: x[i] == '0', remaining_co2))
-            else:
-                remaining_co2 = list(
-                    filter(lambda x: x[i] == '1', remaining_co2))
-
+            remaining_co2 = filter_data(remaining_co2, i, oxygen=False)
         i += 1
+        if len(remaining_oxygen) == 1 and len(remaining_co2) == 1:
+            done_yet = True
+
     print(remaining_oxygen)
     print(remaining_co2)
     print(int(remaining_co2[0], 2) * int(remaining_oxygen[0], 2))
