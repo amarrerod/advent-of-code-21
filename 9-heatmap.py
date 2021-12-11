@@ -38,32 +38,21 @@ def count_adjacent(heatmap):
 
 
 def get_adyacent_not_9(heatmap, i, j):
-    total_basin_size = 0
-    adjacents = []
+    neighbors = []
     if j > 0 and heatmap[i][j-1] != 9:
-        adjacents.append((i, j-1))
+        neighbors.append((i, j-1))
+        heatmap[i][j-1] = 9
     if j < (len(heatmap[i]) - 1) and heatmap[i][j + 1] != 9:
-        adjacents.append((i, j + 1))
-
+        neighbors.append((i, j + 1))
+        heatmap[i][j+1] = 9
     if i > 0 and heatmap[i - 1][j] != 9:
-        adjacents.append((i - 1, j))
-
+        neighbors.append((i - 1, j))
+        heatmap[i - 1][j] = 9
     if i < (len(heatmap) - 1) and heatmap[i + 1][j] != 9:
-        adjacents.append((i + 1, j))
+        neighbors.append((i + 1, j))
+        heatmap[i+1][j] = 9
 
-    total_basin_size = len(adjacents)
-    while not adjacents.empty():
-        n_i, n_j = adjacents.pop()
-        if n_j > 0 and heatmap[n_i][n_j-1] != 9:
-            adjacents.append(heatmap[i][j-1])
-        if j < (len(heatmap[i]) - 1) and heatmap[i][j + 1] != 9:
-            adjacents.append(heatmap[i][j + 1])
-
-        if i > 0 and heatmap[i - 1][j] != 9:
-            adjacents.append(heatmap[i - 1][j])
-
-        if i < (len(heatmap) - 1) and heatmap[i + 1][j] != 9:
-            adjacents.append(heatmap[i + 1][j])
+    return neighbors, heatmap
 
 
 def print_heatmap(heatmap):
@@ -76,52 +65,26 @@ def print_heatmap(heatmap):
 def measure_basins(heatmap, low_points_coords):
     basins = []
     for i, j in low_points_coords:
-        print(f'Starting point is: {i},{j}')
-        print_heatmap(heatmap)
         # Para cada punto debemos buscar sus adyacentes que no sean 9
-        # Para cada adyacente --> repetir
         neighbors = []
         heatmap[i][j] = 9
-        if j > 0 and heatmap[i][j-1] != 9:
-            neighbors.append((i, j-1))
-            heatmap[i][j-1] = 9
-        if j < (len(heatmap[i]) - 1) and heatmap[i][j + 1] != 9:
-            neighbors.append((i, j + 1))
-            heatmap[i][j+1] = 9
-        if i > 0 and heatmap[i - 1][j] != 9:
-            neighbors.append((i - 1, j))
-            heatmap[i - 1][j] = 9
-        if i < (len(heatmap) - 1) and heatmap[i + 1][j] != 9:
-            neighbors.append((i + 1, j))
-            heatmap[i+1][j] = 9
-
+        neighbors, heatmap = get_adyacent_not_9(heatmap, i, j)
         basin_size = 1
+        # Para cada adyacente --> repetir
         while neighbors:
             cell_i, cell_j = neighbors.pop()
-            print(f'Neighbour coords: {cell_i}, {cell_j}')
             basin_size += 1
-            if cell_j > 0 and heatmap[cell_i][cell_j-1] != 9:
-                neighbors.append((cell_i, cell_j-1))
-                heatmap[cell_i][cell_j-1] = 9
-            if cell_j < (len(heatmap[cell_i]) - 1) and heatmap[cell_i][cell_j + 1] != 9:
-                neighbors.append((cell_i, cell_j + 1))
-                heatmap[cell_i][cell_j + 1] = 9
-            if cell_i > 0 and heatmap[cell_i - 1][cell_j] != 9:
-                neighbors.append((cell_i - 1, cell_j))
-                heatmap[cell_i - 1][cell_j] = 9
-            if cell_i < (len(heatmap) - 1) and heatmap[cell_i + 1][cell_j] != 9:
-                neighbors.append((cell_i + 1, cell_j))
-                heatmap[cell_i + 1][cell_j] = 9
+            new_neighbors, heatmap = get_adyacent_not_9(
+                heatmap, cell_i, cell_j)
+            neighbors = neighbors + new_neighbors
 
-        print_heatmap(heatmap)
-        print(f'Basin size is: {basin_size}')
         basins.append(basin_size)
 
-    print(basins)
-    print(np.prod(sorted(basins, reverse=True)[:3]))
+    return np.prod(sorted(basins, reverse=True)[:3])
 
 
 if __name__ == '__main__':
     heatmap = read_input()
     _, low_points_coords = count_adjacent(heatmap)
-    measure_basins(heatmap, low_points_coords)
+    answer = measure_basins(heatmap, low_points_coords)
+    print(answer)
