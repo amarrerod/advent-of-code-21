@@ -6,7 +6,7 @@ from queue import PriorityQueue
 import sys
 np.set_printoptions(threshold=sys.maxsize)
 
-filename = 'data/input_15.txt'
+filename = 'data/input_15_test_2.txt'
 
 
 class Graph:
@@ -33,54 +33,14 @@ class Graph:
         print(str_path)
 
 
-class ExtGraph(Graph):
-    def __init__(self, nodes: Dict, matrix):
-        self.nodes = nodes
-        self.matrix = matrix
-        self.real_size = (len(self.matrix), len(self.matrix[0]))
-        self.size = (self.real_size[0] * 5, self.real_size[1] * 5)
-        self.__extend_nodes()
-
-    def __extend_nodes(self):
-        for x in range(self.size[0]):
-            for y in range(self.size[1]):
-                self.nodes[(x, y)] = {
-                    'neighbors': self.get_neighbours((x, y))
-                }
-
-    def get_neighbours(self, node):
-        x, y = node
-        neighbors = []
-        if x > 0:
-            neighbors.append((x - 1, y))
-        if x < self.size[0] - 1:
-            neighbors.append((x + 1, y))
-        if y > 0:
-            neighbors.append((x, y - 1))
-        if y < self.size[1] - 1:
-            neighbors.append((x, y + 1))
-        return neighbors
-
-    def get_size(self):
-        return self.size
-
-    def get_cost(self, node):
-        x, y = node
-        cost = self.matrix[x % self.real_size[0]][y % self.real_size[1]]
-        cost += y / self.real_size[1] + x / self.real_size[0]
-        cost = cost % 9 if cost > 9 else cost
-        return int(cost)
-
-
 class Dijsktra:
     def __init__(self, graph: Graph, start_point: tuple, end_point: tuple):
         self.graph = graph
         self.start_point = start_point
         self.end_point = end_point
         self.visited = []
-        self.ext_matrix = ext_matrix
 
-    def run(self, verbose=False, part_two=False):
+    def run(self, verbose=False):
         if verbose:
             print(
                 f'Running Dijkstra Algorithm from {self.start_point} to {self.end_point}')
@@ -91,17 +51,11 @@ class Dijsktra:
         pq.put((0, self.start_point))
         while not pq.empty():
             (dist, node) = pq.get()
-            print(f'Visiting node: {node}')
             self.visited.append(node)
             for neighbor in self.graph.get_neighbours(node):
                 if neighbor not in self.visited:
                     old_cost = distances[neighbor]
-                    if part_two:
-                        new_cost = distances[node] + \
-                            self.graph.get_cost(neighbor)
-                    else:
-                        new_cost = distances[node] + \
-                            self.graph.get_cost(neighbor)
+                    new_cost = distances[node] + self.graph.get_cost(neighbor)
                     if new_cost < old_cost:
                         pq.put((new_cost, neighbor))
                         distances[neighbor] = new_cost
@@ -109,7 +63,7 @@ class Dijsktra:
         return distances
 
 
-def read_input(input_filename=filename):
+def read_input(input_filename=filename, part_two=False):
     matrix = []
     nodes = {}
     with open(input_filename, 'r') as file:
@@ -117,6 +71,9 @@ def read_input(input_filename=filename):
         for row in lines:
             row = [int(x) for x in list(row)]
             matrix.append(row)
+        
+        if part_two:
+            matrix = extend_matrix(matrix)
 
         for x in range(len(matrix)):
             for y in range(len(matrix[x])):
@@ -132,6 +89,12 @@ def read_input(input_filename=filename):
     shape = (max_x, max_y)
     return nodes, shape, matrix
 
+
+def extend_matrix(matrix):
+    tile = np.array(matrix[:][:]) - 1
+    print(tile)
+    full_row = np.hstack([(tile+k) % 9 for k in range(5)])
+    return np.vstack([(full_row+k) % 9 for k in range(5)]) + 1
 
 def print_matrix(matrix):
     str_path = ''
@@ -156,11 +119,9 @@ def get_neighbours(matrix, x, y):
 
 
 if __name__ == '__main__':
-    nodes, shape, matrix = read_input()
+    nodes, shape, matrix = read_input(part_two=True)
     graph = Graph(nodes, matrix)
     print_matrix(matrix)
-    ext_matrix = ExtGraph(nodes, matrix)
-    print(ext_matrix.real_size)
-    algorithm = Dijsktra(ext_matrix, (0, 0), ext_matrix.get_size())
-    path = algorithm.run(True, part_two=True)
+    algorithm = Dijsktra(graph, (0, 0), shape)
+    path = algorithm.run(True)
     print(path)
