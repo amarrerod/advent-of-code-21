@@ -6,7 +6,7 @@ from queue import PriorityQueue
 import sys
 np.set_printoptions(threshold=sys.maxsize)
 
-filename = 'data/input_15_test_2.txt'
+filename = 'data/input_15.txt'
 
 
 class Graph:
@@ -31,6 +31,43 @@ class Graph:
                 str_path += str(self.matrix[x][y]) if (x, y) in path else "*"
             str_path += "\n"
         print(str_path)
+
+
+class AStar:
+    def __init__(self, graph: Graph, start_point: tuple, end_point: tuple):
+        self.graph = graph
+        self.start_point = start_point
+        self.end_point = end_point
+        self.visited = []
+
+    def run(self, verbose=False):
+        if verbose:
+            print(
+                f'Running A* Algorithm from {self.start_point} to {self.end_point}')
+        open_list = set([self.start_point])
+        costs = {}
+        costs[self.start_point] = 0
+        parents = {}
+        parents[self.start_point] = self.start_point
+        while open_list:
+            # Ordenar el diccionario de costes
+            sorted_open_list = sorted(
+                open_list, key=lambda item: costs[item] if item in costs else np.inf)
+
+            current_node = sorted_open_list[0]
+            open_list.remove(current_node)
+            if current_node == self.end_point:
+                break
+
+            for neighbor in self.graph.get_neighbours(current_node):
+                cost = costs[current_node] + self.graph.get_cost(neighbor)
+                if neighbor not in costs or cost < costs[neighbor]:
+                    costs[neighbor] = cost
+                    parents[neighbor] = current_node
+                    if neighbor not in open_list:
+                        open_list.add(neighbor)
+
+        return costs[self.end_point]
 
 
 class Dijsktra:
@@ -71,7 +108,7 @@ def read_input(input_filename=filename, part_two=False):
         for row in lines:
             row = [int(x) for x in list(row)]
             matrix.append(row)
-        
+
         if part_two:
             matrix = extend_matrix(matrix)
 
@@ -95,6 +132,7 @@ def extend_matrix(matrix):
     print(tile)
     full_row = np.hstack([(tile+k) % 9 for k in range(5)])
     return np.vstack([(full_row+k) % 9 for k in range(5)]) + 1
+
 
 def print_matrix(matrix):
     str_path = ''
@@ -122,6 +160,6 @@ if __name__ == '__main__':
     nodes, shape, matrix = read_input(part_two=True)
     graph = Graph(nodes, matrix)
     print_matrix(matrix)
-    algorithm = Dijsktra(graph, (0, 0), shape)
+    algorithm = AStar(graph, (0, 0), shape)
     path = algorithm.run(True)
     print(path)
